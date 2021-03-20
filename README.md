@@ -8,7 +8,7 @@ Other than answering questions pertaining to my personal identity crisis, this t
 
 ## Method
 
-I use the pretrained bert-base-cased model provided by Google and the Transformers library provided by Hugging Face. The architecture as well as intuitive descriptions of how all the pieces work are provided by THIS TUTORIAL. I train the models on Google Colab's GPUs.  So overall, all of the heavy lifting is done for me. Thanks!
+I use the pretrained bert-base-cased model provided by Google and the Transformers library provided by Hugging Face. The architecture as well as intuitive descriptions of how all the pieces work are provided by LINKTUTORIAL. I train the models on Google Colab's GPUs.  So overall, all of the heavy lifting is done for me. Thanks!
 
 All that remains for me to do is clean and separate the data into the various training sets, fine tune the various models -- choosing hyperparameters such as learning rate, batch size, and training epochs -- and collect and analyze the results.
 
@@ -35,8 +35,12 @@ I evaluate the models on the test set separated out from the training data, and 
 
 One subtelty is the fact that some papers are only submitted to one subfield, whereas many papers submitted to a main subfield and then cross-listed to several others.  These latter papers may straddle sub-fields and make classifying difficult, where as single-category submissions should be more representative of their category and there fore easier to classify. Indeed, accuracy is substantially higer for single category submissions.
 
-INSERT FIGURE
+<img src="./Pix/accuracy.png" width="524" height="324">
 
 A clear extension of this project is to make a multi-lable classifier to pick up the cross-listed categories. This would be a simple matter of adding some labels and removing the softmax function.  However, for this project I am more interested in looking at the evolution of the subfields and therefore looking at single category submissions is a better indicator.  
 
-To look at the evolution of subfields I evaluated the models on a test set containing only single-category submissions.  The accuracy per category data is shown INSERT FIGURE
+To look at the evolution of subfields I evaluated the models on a test set containing only single-category submissions.  The accuracy of the early model per category is shown below. 
+
+<img src="./Pix/subfield_accuracy.png" width="524" height="524">
+
+A subfield staying flat may be interpreted as stagnation while accuracy decreasing rapidly may indicate progess. The odd case of accuracy increasing perhaps indicates a major even happening directly before the early model years and coming to dominate the field more and more.  
