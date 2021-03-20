@@ -44,3 +44,8 @@ To look at the evolution of subfields I evaluated the models on a test set conta
 <img src="./Pix/subfield_accuracy.png" width="524" height="524">
 
 A subfield staying flat may be interpreted as stagnation while accuracy decreasing rapidly may indicate progess. The odd case of accuracy increasing perhaps indicates a major even happening directly before the early model years and coming to dominate the field more and more.  
+
+
+## Code and Data folders
+
+You can find all the notebooks that were used to make the datasets, train the models, and evaluate the results in the Code folder.  All the datasets are in the Data folder.  Making the datasets was done on a local machine, however training and evaluating the model were done using Google Colab GPUS.
