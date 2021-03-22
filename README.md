@@ -154,3 +154,10 @@ increasing steadily perhaps indicates that a major event happened directly befor
 the early model years and coming to dominate the field more and more.  As mentioned
 above a principal component analysis as a function of year would provide much
 more insight into the underlying source of perceived fads and progress.
+
+## Code and Data folders
+
+You can find all the notebooks that were used to make the datasets, train the 
+models, and evaluate the results in the Code folder.  All the datasets are in 
+the Data folder.  Making the datasets was done on a local machine, however 
+training and evaluating the model were done using Google Colab GPUS.
