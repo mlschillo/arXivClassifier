@@ -1,7 +1,7 @@
 # Dear Theoretical Physics, if we pass each other on the street in 10 years, will we even recognize each other?
 
 As I bid a fond farewell to academia, and an enthusiastic 'Hello' to *world*, I
-face the same questions that many have faced before me: "Am I starting over?
+face the same questions that many have faced before me: "Am I starting over?"
 "What will I do? will it be fascinating, challenging, and rewarding?" "Should I 
 still call myself a physicist?" In this project, I would like to focus on the 
 question of my status as a physicist.  **The idea, as the title suggests, is to
@@ -26,12 +26,12 @@ Other than answering questions pertaining to my current identity revolution
   the fastest.  **This tool allows one see how many subfields are changing over
   time at a glance.**
 - **Grant writers:** citation volume can vary widely over subfields, and furthermore
-  can be the result of fads more-so than long-lasting impactful papers.  This 
+  can be the result of fads more so than long-lasting impactful papers.  This 
   analysis could supplement citations as a quantifiable indication that work in
   a certain year had major impact on the field. Extending this work with a
   **principal component analysis**, which identifies the most important words in
   describing a subfield, would further serve this purpose. 
-- Another possible use is to help extremely indecisive authors who simply cannot
+- **Decision making:** another possible use is to help extremely indecisive authors who simply cannot
   decide which arXiv category to submit to; just download the model, feed it your 
   abstract, and let the expert decide where your submission fits best.
 
@@ -44,7 +44,7 @@ how all the pieces work are provided by [this tutorial](https://curiousily.com/p
 I train the AI to recognize physics subfields on Google Colab's GPUs. Thanks everyone!
  
 ### Other tools
-- PyTorch: provides all the deep learning tools and interfaces with automatically
+- PyTorch: provides all the deep learning tools and interfaces automatically
 with bert.
 - Dask.bag: provides familiar manipulation tools for dealing with the massive (2.9GB)
 arXiv metadata dataset with a small memory footprint.
@@ -66,37 +66,38 @@ least one subfield, but may be cross-listed to other subfields.
 The subfields (also referred to as categories) that my AI can classify are:
 <table border="0">
  <tr>
-    <td> - astro-ph = Astrophysics <br>
-         - cond-mat = Condensed Matter <br>
-         - gr-qc = General Relativity and Quantum Cosmology <br>
-         - hep-ex = High Energy Physics - Experiment <br> 
-         - hep-ph = High Energy Physics - Phenomenology <br> 
-         - hep-th = High Energy Physics - Theory <br> 
-         - math-ph = Mathematical Physics <br> 
-    <td>- nlin = Nonlinear Sciences <br> 
-        - nucl-th = Nuclear Theory <br> 
-        - physics = Physics <br> 
-        - quant-ph = Quantum Physics <br> 
-        - math = Mathematics <br> 
-        - cs = Computer Science <br> </td>
+    <td> <ul>
+      <li> astro-ph = Astrophysics </li>
+         <li> cond-mat = Condensed Matter </li>
+         <li> gr-qc = General Relativity and Quantum Cosmology </li>
+         <li> hep-ex = High Energy Physics - Experiment </li>
+         <li> hep-ph = High Energy Physics - Phenomenology </li> 
+         <li> hep-th = High Energy Physics - Theory </li> 
+         <li> math-ph = Mathematical Physics </li>
+    <td> <li> nlin = Nonlinear Sciences </li>
+        <li> nucl-th = Nuclear Theory </li>
+        <li> physics = Physics </li>
+        <li> quant-ph = Quantum Physics </li>
+        <li> math = Mathematics </li>
+        <li> cs = Computer Science </li> </td>
  </tr>
 </table>
 
-In cleaning the data I:
-- removed sub-sub-fields, e.g. astro-ph.co (cosmology and nongalactic astrophysics)
+The data cleaning process includes:
+- Removing sub-sub-fields, e.g. astro-ph.co (cosmology and nongalactic astrophysics)
   and astro-ph.ga (astrophysics of galaxies) are lumped together in astro-ph.
-- Threw out a few subfields that did not consistently have enough submissions/year:
+- Throwing out a few subfields that did not consistently have enough submissions/year:
   High Energy Physics-Lattice, Nuclear Experiment, Statistics, Quantitative Finance,
   Electrical Engineering and Systems Science, and Economics
-- Clean up newline and other special characters and replaced all LaTeX mathematical
+- Cleaning up newline and other special characters and replacing all LaTeX mathematical
   equations with the word 'equation'.
   
 The data (i.e. the abstracts and their associated categories) was then split by
-year, with each year being balanced w.r.t. the categories. It was important to 
-keep the dataset balanced (keep same number of papers for each category for each)
-year, because I'd like to compare the accuracy of the model across categories.
+year, with each year being balanced with respect to the categories. It was important to 
+keep the dataset balanced (keep same number of papers for each category for each
+year) because I'd like to compare the accuracy of the model across categories.
 If the model finds it relatively difficult to classify astro-ph papers, I'd like that 
-to be due to the content of the papers, and not due to a deficit in the training data.
+to be due to the content of the papers and not due to a deficit in the training data.
 
 ## Training
 
@@ -123,7 +124,7 @@ early papers, and the late model getting 77.1% correct on the late papers.
 However, for the 14 categories we are classifying, this is over 10 times better
 than random.  Also, these are highly technical texts with a lot of jargon; I would
 be interested to know my own accuracy... but I don't have time to read all those
-abstract right now.
+abstracts right now.
 
 One subtlety is the fact that some papers are only submitted to one subfield, 
 whereas many papers submitted to a main subfield and then cross-listed to several
@@ -142,17 +143,16 @@ submissions is a better indicator. (This of course misses trends associated to
 two subfields coming together and suggests a possible extension.)
 
 To look at the evolution of subfields I evaluated the early model on a test sets 
-containing only single-category submissions from each of the intervening years.  
-The accuracy per category data is shown below.
+containing only single-category submissions from each of the intervening years. The accuracy per category data is shown below.
 
 <img src="./Pix/subfield_accuracy.png" width="524" height="524">
 
-A subfield accuracy staying flat may be interpreted as stagnation, while accuracy
+A subfield's accuracy staying flat may be interpreted as stagnation, while accuracy
 decreasing rapidly and steadily may indicate progress. Meanwhile, sharp dips in
-accuracy which only las for a year appear to be fads.  The odd case of accuracy
+accuracy which only last for a year appear to be fads.  The odd case of accuracy
 increasing steadily perhaps indicates that a major event happened directly before
 the early model years and coming to dominate the field more and more.  As mentioned
-above a principal component analysis as a function of year would provide much
+above, a principal component analysis as a function of year would provide much
 more insight into the underlying source of perceived fads and progress.
 
 ## Code and Data folders
@@ -160,4 +160,4 @@ more insight into the underlying source of perceived fads and progress.
 You can find all the notebooks that were used to make the datasets, train the 
 models, and evaluate the results in the Code folder.  All the datasets are in 
 the Data folder.  Making the datasets was done on a local machine, however 
-training and evaluating the model were done using Google Colab GPUS.
+training and evaluating the model were done using Google Colab GPUs.
