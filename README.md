@@ -69,17 +69,20 @@ The subfields (also referred to as categories) that my AI can classify are:
     <td> <ul>
       <li> astro-ph = Astrophysics </li>
          <li> cond-mat = Condensed Matter </li>
+         <li> cs = Computer Science </li>
          <li> gr-qc = General Relativity and Quantum Cosmology </li>
          <li> hep-ex = High Energy Physics - Experiment </li>
          <li> hep-ph = High Energy Physics - Phenomenology </li> 
          <li> hep-th = High Energy Physics - Theory </li> 
-         <li> math-ph = Mathematical Physics </li>
-    <td> <li> nlin = Nonlinear Sciences </li>
+    <td> <li> math = Mathematics </li>
+        <li> math-ph = Mathematical Physics </li>
+        <li> nlin = Nonlinear Sciences </li>
         <li> nucl-th = Nuclear Theory </li>
         <li> physics = Physics </li>
+        <li> q-bio = Quantitative Biology
         <li> quant-ph = Quantum Physics </li>
-        <li> math = Mathematics </li>
-        <li> cs = Computer Science </li> </td>
+        
+         </td>
  </tr>
 </table>
 
