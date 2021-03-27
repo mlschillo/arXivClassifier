@@ -80,9 +80,7 @@ The subfields (also referred to as categories) that my AI can classify are:
         <li> nucl-th = Nuclear Theory </li>
         <li> physics = Physics </li>
         <li> q-bio = Quantitative Biology
-        <li> quant-ph = Quantum Physics </li>
-        
-         </td>
+        <li> quant-ph = Quantum Physics </li> </td>
  </tr>
 </table>
 
