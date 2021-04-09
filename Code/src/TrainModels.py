@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import pandas as pd
 # from pylab import rcParams
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # from matplotlib import rc
 from sklearn.model_selection import train_test_split
 # from sklearn.metrics import confusion_matrix, classification_report
@@ -229,7 +229,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
   return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def train_model(epochs, model, train_dl, val_dl, learn_rate):
+def train_model(epochs, model, train_dl, val_dl, learn_rate, model_path):
     history = defaultdict(list)
     best_accuracy = 0
 
@@ -266,10 +266,10 @@ def train_model(epochs, model, train_dl, val_dl, learn_rate):
             device,
             len(val_dl.dataset)
         )
-        if epoch == 0: val_loss0 = val_loss
+        if epoch == 0:
+            val_loss0 = val_loss
 
         print(f'Val   loss {val_loss} accuracy {val_acc}')
-        print()
 
         history['train_acc'].append(train_acc)
         history['train_loss'].append(train_loss)
@@ -277,18 +277,60 @@ def train_model(epochs, model, train_dl, val_dl, learn_rate):
         history['val_loss'].append(val_loss)
 
         if val_acc > best_accuracy:
-            torch.save(model.state_dict(), 'best_model_state.bin')
+            print('saving model')
+            torch.save(model.state_dict(), model_path + 'best_model_state.bin')
             best_accuracy = val_acc
-        if (epoch > 3 and val_loss > 1.1 * val_loss0):
+        if (epoch > 2) and (val_loss > (1.1 * val_loss0)):
             print('Overfitting')
             break
+        print()
 
+    return history
+
+def data_to_model(train_set_name, data_path, model_path):
+    df1 = pd.read_csv(data_path + train_set_name + '.csv')
+    print(f'there are {df1.shape[0]} total samples')
+
+    categories = df1.category.unique()
+    local_cat_dict = dict(zip(categories, list(range(len(categories)))))
+    df1['local_cat_int'] = df1.category.apply(lambda x: local_cat_dict[x])
+
+    dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
+
+    model = make_model(data_loader=dl_train, n_classes=len(categories))
+    history = train_model(epochs=5, model=model, train_dl=dl_train, val_dl=dl_val,
+                learn_rate=2e-5, model_path=model_path)
+
+    fig = plt.figure()
+    plt.plot(history['train_acc'], label='train accuracy')
+    plt.plot(history['val_acc'], label='validation accuracy')
+    plt.title('Training history')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.ylim([0, 1])
+    plt.savefig(model_path + train_set_name + '.png')
+
+    model = CategoryClassifier(len(categories))
+    model.load_state_dict(torch.load(model_path + 'best_model_state.bin'))
+    model = model.to(device)
+
+    test_acc, _ = eval_model(
+        model,
+        dl_test,
+        nn.CrossEntropyLoss().to(device),
+        device,
+        len(dl_test.dataset)
+    )
+
+    print(f'accuracy on test set = {test_acc.item()}')
 
 ############################################################################
 def main():
     training_set_name = 'small_test_arxiv_0405'
-    path='../../Data/'
-    df1 = pd.read_csv(path + training_set_name + '.csv')
+    data_path = '../../Data/'
+    model_path = '../../Models/' + training_set_name + '_'
+    df1 = pd.read_csv(data_path + training_set_name + '.csv')
     print(df1.shape)
     categories = df1.category.unique()
     local_cat_dict = dict(zip(categories, list(range(len(categories)))))
@@ -296,7 +338,8 @@ def main():
     dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
     print(len(dl_train.dataset), len(dl_val.dataset), len(dl_test.dataset))
     model = make_model(data_loader=dl_train, n_classes=len(categories))
-    train_model(epochs=5, model=model, train_dl=dl_train, val_dl=dl_val, learn_rate=2e-5)
+    train_model(epochs=5, model=model, train_dl=dl_train, val_dl=dl_val,
+                learn_rate=2e-5, model_path=model_path)
 
 if __name__ == '__main__':
     main()
