@@ -325,21 +325,3 @@ def data_to_model(train_set_name, data_path, model_path):
 
     print(f'accuracy on test set = {test_acc.item()}')
 
-############################################################################
-def main():
-    training_set_name = 'small_test_arxiv_0405'
-    data_path = '../../Data/'
-    model_path = '../../Models/' + training_set_name + '_'
-    df1 = pd.read_csv(data_path + training_set_name + '.csv')
-    print(df1.shape)
-    categories = df1.category.unique()
-    local_cat_dict = dict(zip(categories, list(range(len(categories)))))
-    df1['local_cat_int'] = df1.category.apply(lambda x: local_cat_dict[x])
-    dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
-    print(len(dl_train.dataset), len(dl_val.dataset), len(dl_test.dataset))
-    model = make_model(data_loader=dl_train, n_classes=len(categories))
-    train_model(epochs=5, model=model, train_dl=dl_train, val_dl=dl_val,
-                learn_rate=2e-5, model_path=model_path)
-
-if __name__ == '__main__':
-    main()
