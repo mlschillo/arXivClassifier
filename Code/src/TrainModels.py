@@ -1,17 +1,11 @@
-#import transformers
 from transformers import BertModel, BertTokenizer, AdamW, get_linear_schedule_with_warmup
 import torch
 
 import numpy as np
 import pandas as pd
-# from pylab import rcParams
 import matplotlib.pyplot as plt
-# from matplotlib import rc
 from sklearn.model_selection import train_test_split
-# from sklearn.metrics import confusion_matrix, classification_report
 from collections import defaultdict
-# from textwrap import wrap
-#
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
@@ -121,7 +115,7 @@ class MakeDataloader:
             self.ds_test,
             batch_size=self.batch_size,
             num_workers=2)
-        if ~self.test_only:
+        if not self.test_only:
             train_loader = DataLoader(
                 self.ds_train,
                 batch_size=self.batch_size,
@@ -228,100 +222,120 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
   return correct_predictions.double() / n_examples, np.mean(losses)
 
+class TrainingRun():
+    def __init__(self, training_set_name, data_path, model_path, epochs=5, LR=2e-5):
+        self.training_set_name = training_set_name
+        self.model_path = model_path
+        self.data_path = data_path
+        self.epochs = epochs
+        self.LR = LR
 
-def train_model(epochs, model, train_dl, val_dl, learn_rate, model_path):
-    history = defaultdict(list)
-    best_accuracy = 0
 
-    loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = AdamW(model.parameters(), lr=learn_rate, correct_bias=False)
-    total_steps = len(train_dl) * epochs
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=0,
-        num_training_steps=total_steps
-    )
+    def train_model(self, model, train_dl, val_dl):
+        mod_path = self.model_path
+        epochs = self.epochs
+        learn_rate = self.LR
 
-    for epoch in range(epochs):
+        history = defaultdict(list)
+        best_accuracy = 0
 
-        print(f'Epoch {epoch + 1}/{epochs}')
-        print('-' * 10)
-
-        train_acc, train_loss = train_epoch(
-            model,
-            train_dl,
-            loss_fn,
+        loss_fn = nn.CrossEntropyLoss().to(device)
+        optimizer = AdamW(model.parameters(), lr=learn_rate, correct_bias=False)
+        total_steps = len(train_dl) * epochs
+        scheduler = get_linear_schedule_with_warmup(
             optimizer,
-            device,
-            scheduler,
-            len(train_dl.dataset)
+            num_warmup_steps=0,
+            num_training_steps=total_steps
         )
 
-        print(f'Train loss {train_loss} accuracy {train_acc}')
+        for epoch in range(epochs):
 
-        val_acc, val_loss = eval_model(
+            print(f'Epoch {epoch + 1}/{epochs}')
+            print('-' * 10)
+
+            train_acc, train_loss = train_epoch(
+                model,
+                train_dl,
+                loss_fn,
+                optimizer,
+                device,
+                scheduler,
+                len(train_dl.dataset)
+            )
+
+            print(f'Train loss {train_loss} accuracy {train_acc}')
+
+            val_acc, val_loss = eval_model(
+                model,
+                val_dl,
+                loss_fn,
+                device,
+                len(val_dl.dataset)
+            )
+            if epoch == 0:
+                val_loss0 = val_loss
+
+            print(f'Val   loss {val_loss} accuracy {val_acc}')
+
+            history['train_acc'].append(train_acc)
+            history['train_loss'].append(train_loss)
+            history['val_acc'].append(val_acc)
+            history['val_loss'].append(val_loss)
+
+            if val_acc > best_accuracy:
+                print('saving model')
+                torch.save(model.state_dict(), mod_path + 'arxiv_'
+                           + self.training_set_name + '_best_model_state.bin')
+                best_accuracy = val_acc
+            if (epoch > 1) and (val_loss > (1.15 * val_loss0)):
+                print('Overfitting')
+                break
+            print()
+
+        return history
+
+    def data_to_model(self):
+        mod_path = self.model_path
+        dat_path = self.data_path
+        train_set_name = self.training_set_name
+        df1 = pd.read_csv(dat_path + 'arxiv_' + train_set_name + '.csv')
+        print(f'there are {df1.shape[0]} total samples')
+
+        categories = df1.category.unique()
+        local_cat_dict = dict(zip(categories, list(range(len(categories)))))
+        df1['local_cat_int'] = df1.category.apply(lambda x: local_cat_dict[x])
+
+        dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
+
+        model = make_model(data_loader=dl_train, n_classes=len(categories))
+        history = self.train_model(model=model, train_dl=dl_train, val_dl=dl_val)
+
+        fig = plt.figure()
+        plt.plot(history['train_acc'], label='train accuracy')
+        plt.plot(history['val_acc'], label='validation accuracy')
+        plt.title('Training history')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend()
+        plt.ylim([0, 1])
+        plt.savefig(mod_path + 'acc_hist_' + train_set_name + '.png')
+
+        model = CategoryClassifier(len(categories))
+        model.load_state_dict(torch.load(mod_path + 'arxiv_' + train_set_name
+                                         + '_best_model_state.bin'))
+        model = model.to(device)
+
+        test_acc, _ = eval_model(
             model,
-            val_dl,
-            loss_fn,
+            dl_test,
+            nn.CrossEntropyLoss().to(device),
             device,
-            len(val_dl.dataset)
+            len(dl_test.dataset)
         )
-        if epoch == 0:
-            val_loss0 = val_loss
 
-        print(f'Val   loss {val_loss} accuracy {val_acc}')
+        print(f'accuracy on test set = {test_acc.item()}')
+        print(f'test set has {len(dl_test.dataset)} abstracts equally distributed among the'
+              f' {len(categories)} categories: {categories}')
 
-        history['train_acc'].append(train_acc)
-        history['train_loss'].append(train_loss)
-        history['val_acc'].append(val_acc)
-        history['val_loss'].append(val_loss)
-
-        if val_acc > best_accuracy:
-            print('saving model')
-            torch.save(model.state_dict(), model_path + 'best_model_state.bin')
-            best_accuracy = val_acc
-        if (epoch > 2) and (val_loss > (1.1 * val_loss0)):
-            print('Overfitting')
-            break
-        print()
-
-    return history
-
-def data_to_model(train_set_name, data_path, model_path):
-    df1 = pd.read_csv(data_path + train_set_name + '.csv')
-    print(f'there are {df1.shape[0]} total samples')
-
-    categories = df1.category.unique()
-    local_cat_dict = dict(zip(categories, list(range(len(categories)))))
-    df1['local_cat_int'] = df1.category.apply(lambda x: local_cat_dict[x])
-
-    dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
-
-    model = make_model(data_loader=dl_train, n_classes=len(categories))
-    history = train_model(epochs=5, model=model, train_dl=dl_train, val_dl=dl_val,
-                learn_rate=2e-5, model_path=model_path)
-
-    fig = plt.figure()
-    plt.plot(history['train_acc'], label='train accuracy')
-    plt.plot(history['val_acc'], label='validation accuracy')
-    plt.title('Training history')
-    plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-    plt.legend()
-    plt.ylim([0, 1])
-    plt.savefig(model_path + train_set_name + '.png')
-
-    model = CategoryClassifier(len(categories))
-    model.load_state_dict(torch.load(model_path + 'best_model_state.bin'))
-    model = model.to(device)
-
-    test_acc, _ = eval_model(
-        model,
-        dl_test,
-        nn.CrossEntropyLoss().to(device),
-        device,
-        len(dl_test.dataset)
-    )
-
-    print(f'accuracy on test set = {test_acc.item()}')
+        return local_cat_dict, dl_test
 
