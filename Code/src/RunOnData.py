@@ -205,9 +205,6 @@ class EvaluationCase():
 
         return acc_sing
 
-    def get_cat_results(self):
-
-
 
     def cat_acc(self, y_test, y_pred):
         yt = y_test.numpy()
