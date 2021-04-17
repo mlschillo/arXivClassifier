@@ -223,7 +223,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
   return correct_predictions.double() / n_examples, np.mean(losses)
 
 class TrainingRun():
-    def __init__(self, training_set_name, data_path, model_path, epochs=5, LR=2e-5):
+    def __init__(self, training_set_name, data_path, model_path, epochs=10, LR=2e-5):
         self.training_set_name = training_set_name
         self.model_path = model_path
         self.data_path = data_path
@@ -247,9 +247,9 @@ class TrainingRun():
             num_warmup_steps=0,
             num_training_steps=total_steps
         )
-
+        count = 0
         for epoch in range(epochs):
-
+            count += 1
             print(f'Epoch {epoch + 1}/{epochs}')
             print('-' * 10)
 
@@ -283,14 +283,14 @@ class TrainingRun():
             history['val_loss'].append(val_loss)
 
             if val_acc > best_accuracy:
+                count = 0
                 print('saving model')
                 torch.save(model.state_dict(), mod_path + 'arxiv_'
                            + self.training_set_name + '_best_model_state.bin')
                 best_accuracy = val_acc
-            if (epoch > 1) and (val_loss > (1.15 * val_loss0)):
+            if count > 4:
                 print('Overfitting')
                 break
-            print()
 
         return history
 

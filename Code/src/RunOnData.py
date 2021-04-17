@@ -169,10 +169,11 @@ class EvaluationCase():
             ncol = 1 if nplts == 1 else 2
             gs = f.add_gridspec(nrow, ncol)
             for p in range(nplts):
+                m=0
                 ax = f.add_subplot(gs[math.floor(0.5 * p), p % 2])
                 for i in range(3 * p, 3 * p + 3):
                     if i > len(cat_accuracy_permodel[0]): break
-                    plt.plot(cat_accuracy_permodel[0][i], ':', marker=marks[i],
+                    plt.plot(cat_accuracy_permodel[0][i], ':', marker=marks[m],
                              markersize=10,
                              label=list(self.model_dicts[0].keys())[
                                  list(self.model_dicts[0].values()).index(i)],
@@ -181,6 +182,8 @@ class EvaluationCase():
                     plt.legend(fontsize=14)
                     plt.xticks(ticks=range(len(loaders)), labels=year_labels,
                                fontsize=14)
+                    m += 1
+
         plt.savefig(self.model_path + self.model_names[0] + self.model_names[
             1] + 'cat_acc_results.png', bbox_inches='tight')
 
