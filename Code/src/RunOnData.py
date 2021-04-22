@@ -226,7 +226,7 @@ class EvaluationCase():
         all_info = [[], []]
         models, loaders = self.load_data_and_models()
         for m in range(len(models)):
-            for i in range(1, len(loaders) - 1):
+            for i in range(len(loaders)):
                 results = self.eval_model(
                     models[m],
                     loaders[i],
@@ -235,13 +235,15 @@ class EvaluationCase():
 
                 all_info[m].append(results)
 
-        year_labels = [item[:-len('_sincat')] for item in self.test_dataset_names]
+        year_labels = [self.model_names[0][:-len('_sincat')]] \
+                      + [item[:-len('_sincat')] for item in self.test_dataset_names] \
+                      + [self.model_names[1][:-len('_sincat')]]
 
         accuracy_per_cat = [
-            [self.cat_acc(x[y][4], x[y][2]) for y in range(len(loaders)-2)]
+            [self.cat_acc(x[y][4], x[y][2]) for y in range(len(loaders))]
             for x in all_info]
         cat_accuracy_permodel = [
-            [[accuracy_per_cat[m][y][j] for y in range(len(loaders)-2)] for j in
+            [[accuracy_per_cat[m][y][j] for y in range(len(loaders))] for j in
              range(len(self.model_dicts[0].keys()))] for m in range(2)]
 
         nplts = math.ceil(len(cat_accuracy_permodel[0]) / 3)
@@ -273,7 +275,7 @@ class EvaluationCase():
                              linewidth=2, color=next(palette))
                     plt.ylim(.45, 1)
                     plt.legend(fontsize=14)
-                    plt.xticks(ticks=range(len(loaders)-2), labels=year_labels,
+                    plt.xticks(ticks=range(len(loaders)), labels=year_labels,
                                fontsize=14)
                     m += 1
 
