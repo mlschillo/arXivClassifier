@@ -3,11 +3,10 @@
 import dask.bag as db
 import json
 import pandas as pd
-import textwrap
 import threading
 
 
-
+# Helper functions to trim down arxiv metadata and get a single date
 trim = lambda x: {'id': x['id'],
                   'category': x['categories'].split(' '),
                   'abstract': x['abstract'],
@@ -15,6 +14,7 @@ trim = lambda x: {'id': x['id'],
 
 first_v = lambda x: x['versions'][0]['created']
 
+# Overall dictionary for assigning categories to integers, just in case
 allcat = ['hep-ph', 'math', 'physics', 'cond-mat', 'gr-qc', 'astro-ph',
           'hep-th',
           'hep-ex', 'nlin', 'q-bio', 'quant-ph', 'cs', 'nucl-th',
@@ -217,22 +217,3 @@ class data:
         print('Writing selected data to:', place)
         df2write.to_csv(place, index=False, header=True)
 
-
-# ___________________________________________________
-def main():
-    dat = data(years=[2004,2005],
-                 single_cat_subs=False,
-                 threshold=500,
-                 n_percat_peryear=200,
-                 subfields=['hep-th', 'hep-ph', 'hep-ex'],
-                 path='../../Data/',
-                 extra_name='small_test_',
-                 randomseed=666,
-                 verbose=True)
-
-    dat.write_csv()
-
-
-
-if __name__ == '__main__':
-    main()

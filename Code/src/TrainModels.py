@@ -1,6 +1,9 @@
+"""
+Used to package data made in DataSelection.py into Data that can be fed to a
+torch model. Used to train models.
+"""
 from transformers import BertModel, BertTokenizer, AdamW, get_linear_schedule_with_warmup
 import torch
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,14 +14,6 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-
-allcat = ['hep-ph', 'math', 'physics', 'cond-mat', 'gr-qc', 'astro-ph', 'hep-th',
- 'hep-ex', 'nlin', 'q-bio', 'quant-ph', 'cs', 'nucl-th', 'math-ph', 'hep-lat',
- 'nucl-ex', 'q-fin', 'stat', 'eess', 'econ', 'adap-org', 'alg-geom', 'chao-dyn',
- 'cmp-lg', 'comp-gas', 'dg-ga', 'funct-an', 'patt-sol', 'q-alg', 'solv-int']
-
-cat_dict = dict(zip(allcat, range(len(allcat))))
 
 
 class ArXivAbstractDataset(Dataset):
@@ -60,7 +55,10 @@ class ArXivAbstractDataset(Dataset):
         }
 
 class MakeDataloader:
-
+    """This class could be a function.  It just makes data loaders.  If test_only
+    it makes test set loaders to be used in evaluation only - otherwise the data
+    is split into a 90/5/5 train/val/test.
+    """
     def __init__(self, df, bert_model_name='bert-base-cased', test_only=False,
                  batch_size=10, max_len=450, rand_seed=66):
         self.df = df
@@ -133,6 +131,7 @@ class MakeDataloader:
 
 
 class CategoryClassifier(nn.Module):
+    """ The bert model"""
 
     def __init__(self, n_classes, dropout=0.5, bert_model_name='bert-base-cased'):
         super(CategoryClassifier, self).__init__()
@@ -222,7 +221,10 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
   return correct_predictions.double() / n_examples, np.mean(losses)
 
+
 class TrainingRun():
+    """Put everything together and go from the data to the model
+    """
     def __init__(self, training_set_name, data_path, model_path, epochs=10, LR=2e-5):
         self.training_set_name = training_set_name
         self.model_path = model_path
@@ -247,9 +249,8 @@ class TrainingRun():
             num_warmup_steps=0,
             num_training_steps=total_steps
         )
-        count = 0
         for epoch in range(epochs):
-            count += 1
+            print()
             print(f'Epoch {epoch + 1}/{epochs}')
             print('-' * 10)
 
@@ -283,14 +284,10 @@ class TrainingRun():
             history['val_loss'].append(val_loss)
 
             if val_acc > best_accuracy:
-                count = 0
                 print('saving model')
                 torch.save(model.state_dict(), mod_path + 'arxiv_'
                            + self.training_set_name + '_best_model_state.bin')
                 best_accuracy = val_acc
-            if count > 4:
-                print('Overfitting')
-                break
 
         return history
 
@@ -338,4 +335,17 @@ class TrainingRun():
               f' {len(categories)} categories: {categories}')
 
         return local_cat_dict, dl_test
+
+    def get_model_dict_loader(self):
+        dat_path = self.data_path
+        train_set_name = self.training_set_name
+        df1 = pd.read_csv(dat_path + 'arxiv_' + train_set_name + '.csv')
+
+        categories = df1.category.unique()
+        local_cat_dict = dict(zip(categories, list(range(len(categories)))))
+        df1['local_cat_int'] = df1.category.apply(lambda x: local_cat_dict[x])
+
+        dl_train, dl_val, dl_test = MakeDataloader(df1).create_data_loaders()
+
+        return [local_cat_dict, dl_test]
 

@@ -1,27 +1,20 @@
-# import transformers
-# from transformers import BertModel, BertTokenizer, AdamW, get_linear_schedule_with_warmup
+""" Do an experiment """
 import torch
 import math
-#
-# import numpy as np
 import pandas as pd
 import seaborn as sns
-# from pylab import rcParams
 import matplotlib.pyplot as plt
-# from matplotlib import rc
-# from sklearn.model_selection import train_test_split
-# from sklearn.metrics import confusion_matrix, classification_report
-# from collections import defaultdict
-# from textwrap import wrap
-#
-# from torch import nn, optim
-# from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
 import TrainModels as TM
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 class EvaluationCase():
+    """ This class run models on test sets and gives various results.  Takes
+    exactly two models to compare on any number of test sets.  Also needs the
+    dictionarys for how each model labels categories, and the two models must
+    agree on labeling.  Also takes the test data loaders from the model training
+    run to compare with other test sets."""
     def __init__(self,
                  test_dataset_names,
                  model_names,
@@ -125,7 +118,7 @@ class EvaluationCase():
                for x in all_info]
 
         fig = plt.figure()
-        year_labels = [self.model_names[0]] + self.test_dataset_names + [self.model_names[1]]
+        year_labels = ['mod_1'] + self.test_dataset_names + ['mod_2']
         sns.set_style("whitegrid")
         plt.plot(accsing[0], ':b', marker='o',
                  label='single cat ' + self.model_names[0], linewidth=3, markersize=10)
@@ -172,7 +165,7 @@ class EvaluationCase():
                 m=0
                 ax = f.add_subplot(gs[math.floor(0.5 * p), p % 2])
                 for i in range(3 * p, 3 * p + 3):
-                    if i > len(cat_accuracy_permodel[0]): break
+                    if i > len(cat_accuracy_permodel[0]) - 1 : break
                     plt.plot(cat_accuracy_permodel[0][i], ':', marker=marks[m],
                              markersize=10,
                              label=list(self.model_dicts[0].keys())[
@@ -227,4 +220,67 @@ class EvaluationCase():
             category_acc.append(acc)
 
         return category_acc
+
+
+    def get_results_sincat(self):
+        all_info = [[], []]
+        models, loaders = self.load_data_and_models()
+        for m in range(len(models)):
+            for i in range(len(loaders)):
+                results = self.eval_model(
+                    models[m],
+                    loaders[i],
+                    device,
+                    len(loaders[i].dataset))
+
+                all_info[m].append(results)
+
+        year_labels = [self.model_names[0][:-len('_sincat')]] \
+                      + [item[:-len('_sincat')] for item in self.test_dataset_names] \
+                      + [self.model_names[1][:-len('_sincat')]]
+
+        accuracy_per_cat = [
+            [self.cat_acc(x[y][4], x[y][2]) for y in range(len(loaders))]
+            for x in all_info]
+        cat_accuracy_permodel = [
+            [[accuracy_per_cat[m][y][j] for y in range(len(loaders))] for j in
+             range(len(self.model_dicts[0].keys()))] for m in range(2)]
+
+        nplts = math.ceil(len(cat_accuracy_permodel[0]) / 3)
+        nrow = math.ceil(0.5 * nplts)
+        ncol = 1 if nplts == 1 else 2
+        marks = ['^', 'o', 's']
+        with sns.axes_style('white'):
+            sns.despine()
+            palette = iter(sns.color_palette('tab10', 14))
+            f = plt.figure(figsize=(10, nrow*5))
+
+            plt.tick_params(bottom=False, top=False, left=False,
+                            labelleft=False, labelbottom=False)
+            for pos in ['right', 'top', 'bottom', 'left']:
+                plt.gca().spines[pos].set_visible(False)
+
+            plt.title('Subfield accuracy of early model', fontsize=16)
+
+            gs = f.add_gridspec(nrow, ncol)
+            for p in range(nplts):
+                m=0
+                ax = f.add_subplot(gs[math.floor(0.5 * p), p % 2])
+                for i in range(3 * p, 3 * p + 3):
+                    if i > len(cat_accuracy_permodel[0]) - 1 : break
+                    plt.plot(cat_accuracy_permodel[0][i], ':', marker=marks[m],
+                             markersize=10,
+                             label=list(self.model_dicts[0].keys())[
+                                 list(self.model_dicts[0].values()).index(i)],
+                             linewidth=2, color=next(palette))
+                    plt.ylim(.45, 1)
+                    plt.legend(fontsize=14)
+                    plt.xticks(ticks=range(len(loaders)), labels=year_labels,
+                               fontsize=14)
+                    m += 1
+
+        plt.savefig(self.model_path + self.model_names[0] + self.model_names[
+            1] + 'sincat_acc_results.png', bbox_inches='tight')
+
+        return accuracy_per_cat, cat_accuracy_permodel
 
